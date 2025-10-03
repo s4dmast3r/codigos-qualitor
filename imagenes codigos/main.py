@@ -11,26 +11,36 @@ from pyautogui import ImageNotFoundException
 # ——————————————————————————————————————————
 #   CONFIGURACIÓN DE RUTAS A IMÁGENES
 # ——————————————————————————————————————————
-SCRIPT_DIR           = os.path.dirname(os.path.abspath(__file__))
-REGISTRAR_IMG        = os.path.join(SCRIPT_DIR, 'registrar_button.png')
-SUBMIT_IMG           = os.path.join(SCRIPT_DIR, 'submit_button.png')
-INVALID_POPUP_IMG    = os.path.join(SCRIPT_DIR, 'error_popup.png')
+SCRIPT_DIR            = os.path.dirname(os.path.abspath(__file__))
+REGISTRAR_IMG         = os.path.join(SCRIPT_DIR, 'registrar_button.png')
+SUBMIT_IMG            = os.path.join(SCRIPT_DIR, 'submit_button.png')
+INVALID_POPUP_IMG     = os.path.join(SCRIPT_DIR, 'error_popup.png')
+
 # buscamos duplicate_popup.png o duplicate_popup.PNG
-for ext in ('png','PNG'):
+for ext in ('png', 'PNG'):
     _dup = os.path.join(SCRIPT_DIR, f'duplicate_popup.{ext}')
     if os.path.exists(_dup):
         DUPLICATE_POPUP_IMG = _dup
         break
 else:
     raise FileNotFoundError("No encontré duplicate_popup.png/PNG")
-# buscamos error_accept_button.png o .PNG
-for ext in ('png','PNG'):
+
+# buscamos error_accept_button.png o .PNG (el botón OK/Aceptar del popup)
+for ext in ('png', 'PNG'):
     _acc = os.path.join(SCRIPT_DIR, f'error_accept_button.{ext}')
     if os.path.exists(_acc):
         ACCEPT_BUTTON_IMG = _acc
         break
 else:
     raise FileNotFoundError("No encontré error_accept_button.png/PNG")
+
+# buscamos success_popup.png o .PNG (opcional)
+SUCCESS_POPUP_IMG = None
+for ext in ('png', 'PNG'):
+    _succ = os.path.join(SCRIPT_DIR, f'success_popup.{ext}')
+    if os.path.exists(_succ):
+        SUCCESS_POPUP_IMG = _succ
+        break
 
 INPUT_OFFSET_X = 250  # px a la izquierda del botón ✔ para el campo de texto
 
@@ -49,55 +59,63 @@ def focus_brave(title="Brave"):
     time.sleep(1)
 
 def open_tab_and_go(url):
-    pyautogui.hotkey('ctrl','t')
+    pyautogui.hotkey('ctrl', 't')
     time.sleep(0.5)
     pyautogui.typewrite(url, interval=0.02)
     pyautogui.press('enter')
     time.sleep(3)
 
-def click_registrar_codigos():
-    if not os.path.exists(REGISTRAR_IMG):
-        raise FileNotFoundError(REGISTRAR_IMG)
-    btn = None
-    while btn is None:
+def _wait_and_locate_center(img_path, confidence=0.6, grayscale=True, timeout=15, poll=0.3):
+    """Espera hasta que una imagen aparezca en pantalla y devuelve su centro."""
+    if not os.path.exists(img_path):
+        raise FileNotFoundError(img_path)
+    t0 = time.time()
+    while time.time() - t0 < timeout:
         try:
-            btn = pyautogui.locateCenterOnScreen(REGISTRAR_IMG, confidence=0.6, grayscale=True)
+            loc = pyautogui.locateCenterOnScreen(img_path, confidence=confidence, grayscale=grayscale)
         except (ImageNotFoundException, OSError):
-            btn = None
-        time.sleep(0.3)
+            loc = None
+        if loc:
+            return loc
+        time.sleep(poll)
+    raise TimeoutError(f"Timeout esperando {os.path.basename(img_path)} en pantalla.")
+
+def click_registrar_codigos():
+    btn = _wait_and_locate_center(REGISTRAR_IMG, confidence=0.6, grayscale=True, timeout=30)
     pyautogui.click(btn)
     time.sleep(2)
 
 def click_accept():
     """
-    Clica repetidamente el botón "Aceptar" hasta que desaparezca el popup.
+    Clica repetidamente el botón "Aceptar/OK" hasta que desaparezca el popup.
+    Devuelve True si clicó algo; False si no encontró el botón.
     """
     if not os.path.exists(ACCEPT_BUTTON_IMG):
-        return
+        return False
     start = time.time()
+    clicked = False
     while time.time() - start < 10:
-        loc = None
         try:
             loc = pyautogui.locateCenterOnScreen(ACCEPT_BUTTON_IMG, confidence=0.6, grayscale=True)
         except (ImageNotFoundException, OSError):
             loc = None
         if loc:
             pyautogui.click(loc)
+            clicked = True
             time.sleep(0.5)
         else:
             break
+    return clicked
+
+def _popup_present(img_path, confidence=0.6, grayscale=True):
+    try:
+        return pyautogui.locateOnScreen(img_path, confidence=confidence, grayscale=grayscale) is not None
+    except Exception:
+        return False
 
 def send_code(code):
     # 1) localizar ✔
-    if not os.path.exists(SUBMIT_IMG):
-        raise FileNotFoundError(SUBMIT_IMG)
-    btn = None
-    while btn is None:
-        try:
-            btn = pyautogui.locateCenterOnScreen(SUBMIT_IMG, confidence=0.6, grayscale=True)
-        except (ImageNotFoundException, OSError):
-            btn = None
-        time.sleep(0.3)
+    btn = _wait_and_locate_center(SUBMIT_IMG, confidence=0.6, grayscale=True, timeout=30)
 
     # 2) calcular y clicar el campo de texto
     x, y = btn.x - INPUT_OFFSET_X, btn.y
@@ -111,29 +129,32 @@ def send_code(code):
     # 4) clicar ✔ para enviar
     pyautogui.click(btn)
 
-    # 5) esperar aparición de popup
+    # 5) esperar aparición de popup (duplicate / invalid / success)
     t0 = time.time()
     popup_type = None
-    while time.time() - t0 < 3:
-        # chequea duplicado
-        try:
-            if pyautogui.locateOnScreen(DUPLICATE_POPUP_IMG, confidence=0.6, grayscale=True):
-                popup_type = 'duplicate'
-                break
-        except Exception:
-            pass
-        # chequea inválido
-        try:
-            if pyautogui.locateOnScreen(INVALID_POPUP_IMG, confidence=0.6, grayscale=True):
-                popup_type = 'invalid'
-                break
-        except Exception:
-            pass
-        time.sleep(0.3)
+    while time.time() - t0 < 6:  # margen extra por alert nativo
+        # duplicado
+        if _popup_present(DUPLICATE_POPUP_IMG, confidence=0.6, grayscale=True):
+            popup_type = 'duplicate'
+            break
+        # inválido
+        if _popup_present(INVALID_POPUP_IMG, confidence=0.6, grayscale=True):
+            popup_type = 'invalid'
+            break
+        # success por imagen dedicada (si existe)
+        if SUCCESS_POPUP_IMG and _popup_present(SUCCESS_POPUP_IMG, confidence=0.6, grayscale=True):
+            popup_type = 'success'
+            break
+        # success genérico: ver si el botón OK está en pantalla
+        if _popup_present(ACCEPT_BUTTON_IMG, confidence=0.6, grayscale=True):
+            popup_type = 'success'
+            break
+
+        time.sleep(0.25)
 
     # 6) manejar popup
     if popup_type == 'duplicate':
-        click_accept()  # repetidamente hasta cerrar
+        click_accept()
         print(f"[SKIP] Código ya registrado: {code}")
         return
 
@@ -143,7 +164,15 @@ def send_code(code):
         input("⚠️  Corrige manualmente y pulsa Enter para continuar…")
         return
 
-    # 7) si no hubo popup
+    elif popup_type == 'success':
+        if click_accept():
+            print(f"[OK]   {code}  (success con alerta)")
+        else:
+            print(f"[OK]   {code}  (success)")
+        time.sleep(0.7)
+        return
+
+    # 7) si no hubo popup (flujo anterior)
     time.sleep(3)
     print(f"[OK]   {code}")
 
@@ -172,7 +201,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 
