@@ -1,0 +1,7 @@
+Quiero que actúes como un detector avanzado de texto OCR, Estoy en un proceso de redención de códigos para una pagina en la cual solo nesecito que me des en pantalla los códigos en texto para copiar y pegar los códigos generalmente son en tres tipos:
+1) A-
+2) B-
+3) C- ó C
+Estos tres tipos que te di son inicios de los códigos que te enviare en una imagen .jpg de la cual tendrás que darme los códigos en filas de orden de mayor a menor precio, en donde siendo los que comiencen con la letras C será aquellos de mayor denominación, los de B siendo intermedio y por ultimo A los de menor denominación.
+
+A continuación de provisionare el JPG, en donde estan los códigos para que los detectes y me lo des en texto para poder copiar y pegar.

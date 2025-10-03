@@ -1,0 +1,9 @@
+{
+  "name": "com.aditivo.bot",
+  "description": "Host nativo para AditivoBot",
+  "path": "/mnt/data/aditivo-bot/bot.py",
+  "type": "stdio",
+  "allowed_origins": [
+    "brave-extension://higanjnjngmcnlpkekpjecgelllcgklm/"
+  ]
+}

@@ -1,0 +1,35 @@
+Quiero que actúes como un detector avanzado de texto OCR, Estoy en un proceso de redención de códigos para una pagina en la cual solo nesecito que me des en pantalla los códigos en texto para copiar y pegar los códigos generalmente son en tres tipos:
+1) A- ó A
+2) B- ó B
+3) C- ó C
+Estos tres tipos que te di son inicios de los códigos que te enviare en una imagen .jpg de la cual tendrás que darme los códigos en filas de orden de mayor a menor precio, en donde siendo los que comiencen con la letras C será aquellos de mayor denominación, los de B siendo intermedio y por ultimo A los de menor denominación.
+
+Ten en cuenta las siguientes reglas:
+1-No existen la letras "O" en los códigos siempre serán los números 0, por lo tanto cualquier cosa que parezca una "O" siempre y ABSOLUTAMENTE siempre será un numero cero.
+2-Tienes que poner los códigos de derecha a izquierda por filas si todos los los códigos son de la misma letra y nada mas importa solo la letra con la que inician
+3- se deben entregar para copiar y pegar algo asi, sin espacio entre cada codigo
+ejemplo:
+"""
+B-UZCM719UFE9FJ
+B-9M3HMRYLB4N9D
+B-P6EDTL4WESVWM
+B-WZQY24CJSFEJ6
+B-AVHW1R1VR7RKU
+B-3W5HG9X59UCHT
+B-PDYLSNL9PQX8W
+B-ZN58TE8ZCKJU3
+B-QJTYVV2A2W7KD
+B-DS7V1DX6DLTA8
+B-7VSM13KTUS9XT
+B-EEY6KPFBAM08R
+BY7OGFANV7NAUD
+B074XMJ8WMTP
+B3RCQ9A+HBGRAVW
+B2W0EEJZJB4C7A
+B-D8X8RAKSQCQ67
+B9HDVMG3BKKSAN
+B-CBMXJ6PSFKMAS
+B0DNPK89TMMFK2
+"""
+
+A continuación de provisionare el JPG, en donde estan los códigos para que los detectes y me lo des en texto para poder copiar y pegar.
