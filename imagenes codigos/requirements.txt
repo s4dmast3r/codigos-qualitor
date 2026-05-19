@@ -1,0 +1,5 @@
+pyautogui==0.9.54
+pygetwindow==0.0.9
+opencv-python==4.13.0.92
+numpy
+pillow==12.2.0
